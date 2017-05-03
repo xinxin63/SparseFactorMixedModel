@@ -23,8 +23,8 @@ setwd(folder)
 
 # initialize priors
 run_parameters = BSFG_control(
-  # sampler = 'fast_BSFG',
-  sampler = 'general_BSFG',
+  sampler = 'fast_BSFG',
+  # sampler = 'general_BSFG',
   scale_Y = FALSE,
   simulation = FALSE,
   h2_divisions = 20,
@@ -61,6 +61,7 @@ data_model_parameters = list(
   resid_Y_prec_rate = 1
 )
 
+setup$data$ID = unique(setup$observations$ID)
 # options(error=recover)
 BSFG_state = with(setup,BSFG_init(observations$Y, model=~X2+(1|animal), data, #factor_model_fixed = ~1,
                                   priors=priors,run_parameters=run_parameters,K_mats = list(animal = K),
