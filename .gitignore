@@ -1,2 +1,15 @@
 rep*
 R_rep*
+sourceCpp*
+.Rproj.user
+*.o
+*.so
+.Rhistory
+*.Rapp.history
+*.RData
+*.log
+*.synctex.gz
+*.aux
+*.out
+*.toc
+*plots.pdf

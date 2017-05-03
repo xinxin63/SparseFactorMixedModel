@@ -5,12 +5,27 @@ CovToCor = function(X){
 }
 
 trace_plot = function(data,main = NULL,ylim = NULL){
-  if(is.null(ylim)) ylim = range(data)
+    if(is.null(ylim)) {
+        range_y = range(data)
+        max_range = max(abs(range_y))
+        ylim = c(-max_range,max_range)
+    }
   plot(NA,NA,xlim = c(0,ncol(data)),ylim = ylim,main= main,xlab = "iteration")
 	for(i in 1:nrow(data)) lines(data[i,],col=i)
 }
 
-draw_simulation_diagnostics = function(sp_num,run_parameters,run_variables,Posterior,Lambda,F_h2,E_a_prec,resid_Y_prec){
+# draw_simulation_diagnostics = function(sp_num,run_parameters,run_variables,Posterior,Lambda,F_h2,E_a_prec,resid_Y_prec){
+draw_simulation_diagnostics = function(BSFG_state){
+    sp_num = dim(BSFG_state$Posterior$Lambda)[2]
+    run_parameters = BSFG_state$run_parameters
+    run_variables = BSFG_state$run_variables
+    Posterior = BSFG_state$Posterior
+    Lambda = BSFG_state$current_state$Lambda
+    F_h2 = BSFG_state$current_state$F_h2
+    # E_a_prec = BSFG_state$current_state$tot_Y_prec / BSFG_state$current_state$resid_h2
+    # resid_Y_prec = BSFG_state$current_state$tot_Y_prec / (1-BSFG_state$current_state$resid_h2)
+    E_a_prec = BSFG_state$current_state$E_a_prec
+    resid_Y_prec = BSFG_state$current_state$resid_Y_prec
 
     devices = dev.list()
     while(length(devices) < 4){
@@ -29,8 +44,8 @@ draw_simulation_diagnostics = function(sp_num,run_parameters,run_variables,Poste
     E_Lambda = sweep(Lambda,2,sqrt(E_h2),'*')
     actual_G_Lambda = run_parameters$setup$gen_factor_Lambda
     actual_E_Lambda = run_parameters$setup$error_factor_Lambda
-    G_est = G_Lambda %*% t(G_Lambda) + diag(1/E_a_prec)
-    E_est = E_Lambda %*% t(E_Lambda) + diag(1/resid_Y_prec)
+    G_est = G_Lambda %*% t(G_Lambda) + diag(1/unlist(E_a_prec))
+    E_est = E_Lambda %*% t(E_Lambda) + diag(1/unlist(resid_Y_prec))
     G_act = run_parameters$setup$G
     E_act = run_parameters$setup$R
     h2s_act = run_parameters$setup$h2
@@ -78,7 +93,7 @@ draw_simulation_diagnostics = function(sp_num,run_parameters,run_variables,Poste
         }
 
     	dev.set(devices[3])
-    	# Figure of trace plots and histograms of the factor heritablities
+        # Figure of trace plots and histograms of the factor heritablities
         f4_row=4;
         f4_col=4;
         par(mfrow=c(f4_row,f4_col))
@@ -113,42 +128,52 @@ draw_simulation_diagnostics = function(sp_num,run_parameters,run_variables,Poste
         dev.set(devices[4])
         par(mfrow=c(3,3))
         cors = abs(cor(G_Lambda,actual_E_Lambda))
-    	cors=rbind(cors,apply(cors,2,max))
-    	cors = cbind(cors,apply(cors,1,max))
-    	image(cors[,ncol(cors):1],zlim=c(0,1),main = "cor of G_lambda vs act_E_lambda")
+        cors=rbind(cors,apply(cors,2,max))
+        cors = cbind(cors,apply(cors,1,max))
+        image(cors[,ncol(cors):1],zlim=c(0,1),main = "cor of G_lambda vs act_E_lambda")
 
-    	image(CovToCor(G_est),zlim=c(-1,1),main = "G_est")
-    	image(CovToCor(E_est),zlim=c(-1,1),main = "E_est")
+        image(CovToCor(G_est),zlim=c(-1,1),main = "G_est")
+        image(CovToCor(E_est),zlim=c(-1,1),main = "E_est")
 
-    	clim=max(0.1,min(.75,max(max(abs(G_Lambda)))))
-    	clims=c(-clim,clim)
-    	image(t(G_Lambda),zlim=clims,main = "G_lambda")
+        clim=max(0.1,min(.75,max(max(abs(G_Lambda)))))
+        clims=c(-clim,clim)
+        image(t(G_Lambda),zlim=clims,main = "G_lambda")
 
-    	image(t(actual_G_Lambda),zlim=clims,main = "act_G_lambda")
+        image(t(actual_G_Lambda),zlim=clims,main = "act_G_lambda")
 
-    	plot(c(G_est),c(G_act),main = "G_est vs G_act");abline(0,1)
+        plot(c(G_est),c(G_act),main = "G_est vs G_act");abline(0,1)
         plot(c(E_est),c(E_act),main = "E_est vs E_act");abline(0,1)
 
         plot(diag(G_est)/(diag(G_est)+diag(E_est)),h2s_act,xlim=c(0,1),ylim=c(0,1),main = "h2s_est vs h2s_act")
         abline(0,1)
 
-    	F_h2 = rowMeans(Posterior$F_h2[,1:sp_num])
-    	E_h2 = 1-F_h2
-    	plot(F_h2,type='l',ylim=c(0,1),main = "F_h2 vs E_h2")
-    	lines(E_h2,col=2)
+        F_h2 = rowMeans(Posterior$F_h2[,1:sp_num])
+        E_h2 = 1-F_h2
+        plot(F_h2,type='l',ylim=c(0,1),main = "F_h2 vs E_h2")
+        lines(E_h2,col=2)
     }
 }
 
-draw_results_diagnostics = function(sp_num,params,run_variables,Lambda, F_h2, Posterior,E_a_prec,resid_Y_prec,traitnames){
-    # devices = dev.list()
-    # while(length(devices) < 7){
-    #     if(.Platform$OS.type != "windows") {
-    #        quartz()
-    #     } else {
-    #         windows()
-    #     }
-    #     devices = dev.list()
-    # }
+draw_results_diagnostics = function(BSFG_state){
+    sp_num = dim(BSFG_state$Posterior$Lambda)[2]
+    run_parameters = BSFG_state$run_parameters
+    run_variables = BSFG_state$run_variables
+    Posterior = BSFG_state$Posterior
+    Lambda = BSFG_state$current_state$Lambda
+    F_h2 = BSFG_state$current_state$F_h2
+    E_a_prec = BSFG_state$current_state$tot_Y_prec / BSFG_state$current_state$resid_h2
+    resid_Y_prec = BSFG_state$current_state$tot_Y_prec / (1-BSFG_state$current_state$resid_h2)
+    traitnames = BSFG_state$traitnames
+    
+    devices = dev.list()
+    while(length(devices) < 4){
+        if(.Platform$OS.type != "windows") {
+           quartz()
+        } else {
+            windows()
+        }
+        devices = dev.list()
+    }
 
     p = run_variables$p
     E_h2 = 1-F_h2;
@@ -156,10 +181,10 @@ draw_results_diagnostics = function(sp_num,params,run_variables,Lambda, F_h2, Po
     E_Lambda = sweep(Lambda,2,sqrt(E_h2),'*')
     G_est = G_Lambda %*% t(G_Lambda) + diag(1/E_a_prec)
     E_est = E_Lambda %*% t(E_Lambda) + diag(1/resid_Y_prec)
- 
+ # recover()
     # Figure 1: accuracy of current parameter estimates
-    #dev.set(devices[1])
-    pdf('plotting_diagnostics.pdf')
+    dev.set(devices[1])
+    # pdf('plotting_diagnostics.pdf')
     par(mfrow=c(2,2))
     # plot 1: estimated number of important factors   
     factor_variances = diag(t(Lambda) %*% Lambda)
@@ -178,9 +203,8 @@ draw_results_diagnostics = function(sp_num,params,run_variables,Lambda, F_h2, Po
     
     if(sp_num>1){
 
-        #dev.set(devices[2])
+        dev.set(devices[2])
         # Figure of trace plots of the largest elements of each column of the factor loading matrix
-        #png('trace plots column of the factor loading matrix.png',width = )
         f2_row=4;
         f2_col=4;
         par(mfrow=c(f2_row,f2_col))
@@ -259,59 +283,60 @@ draw_results_diagnostics = function(sp_num,params,run_variables,Lambda, F_h2, Po
         lines(E_h2,col="red")
         legend("topright",legend = c("F_h2","E_h2"),col = c("blue","red"),text.col = c("blue","red"),bty = "n",pch = 1)
         #dev.off()
+        #dev.off()
         
         #plot 5: trace plot of G_est
-        #dev.set(devices[5])
-        #pdf('trace plot of G_est.pdf')
-        par(mfrow = c(2,1))
-        trace_plot(traces_G,main = "trace plot of Gj")
-        trace_plot(traces_G_cor,main = "trace plot of Gj_cor")
-        #dev.off()
+        # dev.set(devices[5])
+        # #pdf('trace plot of G_est.pdf')
+        # par(mfrow = c(2,1))
+        # trace_plot(traces_G,main = "trace plot of Gj")
+        # trace_plot(traces_G_cor,main = "trace plot of Gj_cor")
+        # #dev.off()
         
-        #plot 6: distance matrix plot 
-        #dev.set(devices[6])
-        #pdf('distance matrix plot.pdf')
-        par(mfrow = c(1,2))
-        Gcov2 = G_est^2
-        rownames(Gcov2) = traitnames
-        plot(hclust(dist(1-Gcov2)), main = "distance matrix plot of Gcov2")
+        # plot 6: distance matrix plot 
+        # dev.set(devices[6])
+        # #pdf('distance matrix plot.pdf')
+        # par(mfrow = c(1,2))
+        # Gcov2 = G_est^2
+        # rownames(Gcov2) = traitnames
+        # plot(hclust(dist(1-Gcov2)), main = "distance matrix plot of Gcov2")
         
-        Gcor = CovToCor(G_est) 
-        Gcor2 = Gcor^2
-        rownames(Gcor2) = traitnames
-        plot(hclust(dist(1-Gcor2)),main = "distance matrix plot of Gcor2")
-        #dev.off()
+        # Gcor = CovToCor(G_est) 
+        # Gcor2 = Gcor^2
+        # rownames(Gcor2) = traitnames
+        # plot(hclust(dist(1-Gcor2)),main = "distance matrix plot of Gcor2")
+        # #dev.off()
       
-        #plot 7: distribution of lambda for each trait 
-        #pdf('Lambda_columns_posterior.pdf')
-        lam_col = 2
-        lam_row = 2
-        par(mfrow = c(lam_row,lam_col))
-        Lambda = Posterior$Lambda
+        # # plot 7: distribution of lambda for each trait 
+        # #pdf('Lambda_columns_posterior.pdf')
+        # lam_col = 2
+        # lam_row = 2
+        # par(mfrow = c(lam_row,lam_col))
+        # Lambda = Posterior$Lambda
         
-        for(i in 1:k) {
-          par(mar=c(10,3,3,1))
-          Li_samples = t(Lambda[(i-1)*p + 1:p,])
-          colnames(Li_samples) = BSFG_state$traitnames
-          boxplot(Li_samples,ylim = c(-1,1)*max(abs(Li_samples)),
-                    main=sprintf("boxplot of Lambda_%d by traits",i),
-                  las = 2,cex.axis=.6)
-          abline(h=0)
-        }
+        # for(i in 1:k) {
+        #   par(mar=c(10,3,3,1))
+        #   Li_samples = Posterior$Lambda[,i,]
+        #   rownames(Li_samples) = BSFG_state$traitnames
+        #   boxplot(Li_samples,ylim = c(-1,1)*max(abs(Li_samples)),
+        #             main=sprintf("boxplot of Lambda_%d by traits",i),
+        #           las = 2,cex.axis=.6)
+        #   abline(h=0)
+        # }
         #dev.off()
         
         #plot 8: distribution of upper triangle Gcor 
-        #dev.set(devices[7])
-        #pdf('boxplot of G_cor.pdf')
-        par(mfrow = c(1,2))
-        med = apply(t(traces_G_cor), 2, function(x)quantile(x,.5))
-        L = apply(t(traces_G_cor), 2, function(x)quantile(x,.05))
-        U = apply(t(traces_G_cor), 2, function(x)quantile(x,.95))
-        require(plotrix)
+        # dev.set(devices[7])
+        # #pdf('boxplot of G_cor.pdf')
+        # par(mfrow = c(1,2))
+        # med = apply(t(traces_G_cor), 2, function(x)quantile(x,.5))
+        # L = apply(t(traces_G_cor), 2, function(x)quantile(x,.05))
+        # U = apply(t(traces_G_cor), 2, function(x)quantile(x,.95))
+        # require(plotrix)
         
-        plotCI(1:(p*(p+1)/2),med,ui=U,li=L,main = "90% C.I of G_cor")
-        boxplot(t(traces_G_cor),main="boxplot of G_cor")
-        dev.off()
+        # plotCI(1:(p*(p+1)/2),med,ui=U,li=L,main = "90% C.I of G_cor")
+        # boxplot(t(traces_G_cor),main="boxplot of G_cor")
+        # dev.off()
   }
 }
 

@@ -22,7 +22,8 @@ library(RcppArmadillo)
 
 # set the directory to the location of the setup.RData or setup.mat file
 #setwd('Example_simulation')
-setwd('1')
+
+
 # choose a seed for the random number generator. This can be a random seed (for analysis), or you can choose your seed so that 
 # you can repeat the MCMC exactly
 #seed = sample(1:1e3,1)
