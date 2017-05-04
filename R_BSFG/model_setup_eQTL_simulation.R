@@ -61,8 +61,7 @@ BSFG_state$priors$h2_priors_resids = with(BSFG_state$data_matrices, sapply(1:nco
   pmax(pmin(ddirichlet(c(h2s,1-sum(h2s)),rep(2,length(h2s)+1)),10),1e-10)
 }))
 BSFG_state$priors$h2_priors_resids = BSFG_state$priors$h2_priors_resids/sum(BSFG_state$priors$h2_priors_resids)
-BSFG_state$priors$h2_priors_factors = c(h2_divisions-1,rep(1,h2_divisions-1))/(2*(h2_divisions-1))
-
+BSFG_state$priors$h2_priors_factors = BSFG_state$priors$h2_priors_resids
 
 save(BSFG_state,file="BSFG_state.RData")
 
@@ -83,6 +82,11 @@ BSFG_state = clear_Posterior(BSFG_state)
 
 n_samples = 200
 for(i  in 1:100) {
+  if(i < 10 || (i-1) %% 20 == 0) {
+    BSFG_state$current_state = update_k(BSFG_state)
+    BSFG_state = reorder_factors(BSFG_state)
+    BSFG_state = clear_Posterior(BSFG_state)
+  }
   print(sprintf('Run %d',i))
   BSFG_state = sample_BSFG(BSFG_state,n_samples,grainSize=1)
   trace_plot(BSFG_state$Posterior$tot_F_prec[,1,])

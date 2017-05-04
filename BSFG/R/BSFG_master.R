@@ -191,6 +191,11 @@ BSFG_init = function(Y, model, data, factor_model_fixed = NULL, priors, run_para
 	# build X from fixed model
 	  # for Eta
 	X = model.matrix(nobars(model),data)
+	linear_combos = caret::findLinearCombos(X)
+	if(!is.null(linear_combos$remove)) {
+	  cat(sprintf('dropping column(s) %s to make X_resid full rank\n',paste(linear_combos$remove,sep=',')))
+	  X = X[,-linear_combos$remove]
+	}
 	if(all(X[,1] == 1)) {
 	  resid_intercept = TRUE   # is there an intercept? If so, don't penalize coefficient.
 	} else{
@@ -524,9 +529,9 @@ sample_BSFG = function(BSFG_state,n_samples,grainSize = 1,...) {
     BSFG_state$current_state[names(data_model_state)] = data_model_state
 
     # -- adapt number of factors to samples ---#
-    if(i > 200 && i < burn && runif(1) < with(BSFG_state$run_parameters,1/exp(b0 + b1*i))){  # adapt with decreasing probability per iteration
-      BSFG_state$current_state = update_k(BSFG_state)
-    }
+    # if(i > 200 && i < burn && runif(1) < with(BSFG_state$run_parameters,1/exp(b0 + b1*i))){  # adapt with decreasing probability per iteration
+    #   BSFG_state$current_state = update_k(BSFG_state)
+    # }
 
     # -- save sampled values (after thinning) -- #
     if( (i-burn) %% thin == 0 && i > burn) {
