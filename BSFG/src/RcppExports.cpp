@@ -52,7 +52,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // sample_coefs_set_c
-MatrixXd sample_coefs_set_c(Rcpp::List model_matrices, Rcpp::List randn_draws, Rcpp::List s_vectors, Map<VectorXd> h2s, Map<VectorXd> tot_Eta_prec, Map<MatrixXd> prior_mean, Map<MatrixXd> prior_prec, int n, int grainSize);
+MatrixXd sample_coefs_set_c(Rcpp::List model_matrices, Rcpp::List randn_draws, Rcpp::List s_vectors, Map<MatrixXd> h2s, Map<MatrixXd> tot_Eta_prec, Map<MatrixXd> prior_mean, Map<MatrixXd> prior_prec, int n, int grainSize);
 RcppExport SEXP BSFG_sample_coefs_set_c(SEXP model_matricesSEXP, SEXP randn_drawsSEXP, SEXP s_vectorsSEXP, SEXP h2sSEXP, SEXP tot_Eta_precSEXP, SEXP prior_meanSEXP, SEXP prior_precSEXP, SEXP nSEXP, SEXP grainSizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -60,8 +60,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::List >::type model_matrices(model_matricesSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type randn_draws(randn_drawsSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type s_vectors(s_vectorsSEXP);
-    Rcpp::traits::input_parameter< Map<VectorXd> >::type h2s(h2sSEXP);
-    Rcpp::traits::input_parameter< Map<VectorXd> >::type tot_Eta_prec(tot_Eta_precSEXP);
+    Rcpp::traits::input_parameter< Map<MatrixXd> >::type h2s(h2sSEXP);
+    Rcpp::traits::input_parameter< Map<MatrixXd> >::type tot_Eta_prec(tot_Eta_precSEXP);
     Rcpp::traits::input_parameter< Map<MatrixXd> >::type prior_mean(prior_meanSEXP);
     Rcpp::traits::input_parameter< Map<MatrixXd> >::type prior_prec(prior_precSEXP);
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
@@ -312,6 +312,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
     Rcpp::traits::input_parameter< int >::type grainSize(grainSizeSEXP);
     rcpp_result_gen = Rcpp::wrap(sample_h2s_discrete_MH_c(Y, tot_Eta_prec, discrete_priors, h2_index, h2s_matrix, Sigma_Choleskys, r_draws, state_draws, step_size, grainSize));
+    return rcpp_result_gen;
+END_RCPP
+}
+// tot_prec_scores_withX_c2
+VectorXd tot_prec_scores_withX_c2(Map<MatrixXd> UtEta, Map<MatrixXd> B_F, Map<VectorXd> h2, Map<VectorXd> s, Map<MatrixXd> prec_B_F);
+RcppExport SEXP BSFG_tot_prec_scores_withX_c2(SEXP UtEtaSEXP, SEXP B_FSEXP, SEXP h2SEXP, SEXP sSEXP, SEXP prec_B_FSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Map<MatrixXd> >::type UtEta(UtEtaSEXP);
+    Rcpp::traits::input_parameter< Map<MatrixXd> >::type B_F(B_FSEXP);
+    Rcpp::traits::input_parameter< Map<VectorXd> >::type h2(h2SEXP);
+    Rcpp::traits::input_parameter< Map<VectorXd> >::type s(sSEXP);
+    Rcpp::traits::input_parameter< Map<MatrixXd> >::type prec_B_F(prec_B_FSEXP);
+    rcpp_result_gen = Rcpp::wrap(tot_prec_scores_withX_c2(UtEta, B_F, h2, s, prec_B_F));
     return rcpp_result_gen;
 END_RCPP
 }
