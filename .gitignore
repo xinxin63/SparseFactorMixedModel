@@ -13,3 +13,4 @@ sourceCpp*
 *.out
 *.toc
 *plots.pdf
+BSFG/packrat/
